@@ -80,6 +80,7 @@ services:
       OLLAMA_MODEL: gemma3:1b
       LOG_LEVEL: INFO
       PYTHONPATH: /app
+      ENABLE_METRICS: "true"
     ports:
       - "8000:8000"
     volumes:

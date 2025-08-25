@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     # CORS
     allowed_hosts: list[str] = Field(
-        default=["http://localhost:3000", "http://localhost:8000"], env="ALLOWED_HOSTS"
+        default=["*"]
     )
 
     # Database
@@ -63,7 +63,6 @@ class Settings(BaseSettings):
     metrics_enabled: bool = Field(default=True, env="METRICS_ENABLED")
 
     class Config:
-        env_file = ".env"
         case_sensitive = False
 
 

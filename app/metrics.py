@@ -72,7 +72,7 @@ def setup_metrics(app: FastAPI) -> None:
         should_ignore_untemplated=True,
         should_respect_env_var=True,
         should_instrument_requests_inprogress=True,
-        excluded_handlers=["/metrics", "/health"],
+        excluded_handlers=["/health"],
         env_var_name="ENABLE_METRICS",
     )
 
