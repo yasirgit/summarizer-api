@@ -1,0 +1,64 @@
+# Ollama Service Dockerfile
+FROM ollama/ollama:latest
+
+# Build arguments
+ARG BUILD_DATE
+ARG VERSION
+ARG REVISION
+
+# Create a directory for the model
+RUN mkdir -p /root/.ollama
+
+# Create a startup script that pulls the model on first run
+COPY <<EOF /usr/local/bin/startup.sh
+#!/bin/bash
+set -e
+
+echo "Starting Ollama server..."
+
+# Start Ollama server in background
+/bin/ollama serve &
+OLLAMA_PID=\$!
+
+# Wait for Ollama to be ready
+echo "Waiting for Ollama to start..."
+until curl -s http://localhost:11434/api/tags > /dev/null 2>&1; do
+    sleep 2
+done
+
+echo "Ollama is ready!"
+
+# Check if model exists, if not pull it
+if ! /bin/ollama list | grep -q "mistral:latest"; then
+    echo "Pulling mistral:latest model (this may take a few minutes)..."
+    /bin/ollama pull mistral:latest
+    echo "Model pulled successfully!"
+else
+    echo "Model mistral:latest already exists"
+fi
+
+# Keep Ollama running in foreground
+wait \$OLLAMA_PID
+EOF
+
+# Make the script executable
+RUN chmod +x /usr/local/bin/startup.sh
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:11434/api/tags || exit 1
+
+# Expose port
+EXPOSE 11434
+
+# Add labels for better image metadata
+LABEL org.opencontainers.image.created=${BUILD_DATE} \
+      org.opencontainers.image.version=${VERSION} \
+      org.opencontainers.image.revision=${REVISION} \
+      org.opencontainers.image.title="Summarizer Ollama" \
+      org.opencontainers.image.description="Ollama LLM service with pre-loaded gemma3:1b model" \
+      org.opencontainers.image.vendor="Summarizer API Project" \
+      org.opencontainers.image.source=""
+
+# Start with our custom startup script
+CMD ["/bin/bash", "/usr/local/bin/startup.sh"]

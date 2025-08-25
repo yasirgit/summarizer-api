@@ -1,0 +1,481 @@
+openapi: 3.1.0
+info:
+  title: Summarizer API
+  description: A FastAPI-based summarizer API with Ollama integration
+  version: 0.1.0
+paths:
+  /api/v1/summarize:
+    post:
+      summary: Summarize Text
+      description: Summarize text using Ollama.
+      operationId: summarize_text_api_v1_summarize_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SummarizeRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SummarizeResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/extract:
+    post:
+      summary: Extract Content
+      description: Extract content from URL using Trafilatura.
+      operationId: extract_content_api_v1_extract_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtractionRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractionResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/progress/{task_id}:
+    get:
+      summary: Get Progress
+      description: Get task progress.
+      operationId: get_progress_api_v1_progress__task_id__get
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Task Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgressResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/models:
+    get:
+      summary: List Models
+      description: List available Ollama models.
+      operationId: list_models_api_v1_models_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/v1/health:
+    get:
+      summary: Health Check
+      description: Health check endpoint.
+      operationId: health_check_api_v1_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/v1/documents/:
+    post:
+      summary: Create Document
+      description: 'Create a new document with advanced uniqueness logic:
+
+        - If exact name+URL match exists: re-trigger summarization
+
+        - If partial match exists: return 409 Conflict
+
+        - Otherwise: create new document'
+      operationId: create_document_api_v1_documents__post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentCreateRequest'
+        required: true
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/documents/{document_uuid}/:
+    get:
+      summary: Get Document
+      description: Get document by UUID.
+      operationId: get_document_api_v1_documents__document_uuid___get
+      parameters:
+      - name: document_uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Document Uuid
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/:
+    get:
+      summary: Api Info
+      description: API information.
+      operationId: api_info_api_v1__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /health:
+    get:
+      summary: Health Check
+      description: Health check endpoint.
+      operationId: health_check_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /healthz:
+    get:
+      summary: Healthz
+      description: Health check endpoint for Kubernetes.
+      operationId: healthz_healthz_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /readyz:
+    get:
+      summary: Readyz
+      description: Readiness check endpoint for Kubernetes.
+      operationId: readyz_readyz_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /:
+    get:
+      summary: Root
+      description: Root endpoint.
+      operationId: root__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+components:
+  schemas:
+    DocumentCreateRequest:
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Name
+          description: Document name
+        url:
+          type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
+          title: Url
+          description: Document URL
+      type: object
+      required:
+      - name
+      - url
+      title: DocumentCreateRequest
+      description: Request schema for creating a document.
+    DocumentResponse:
+      properties:
+        document_uuid:
+          type: string
+          title: Document Uuid
+          description: Unique document identifier
+        status:
+          $ref: '#/components/schemas/DocumentStatus'
+          description: Document processing status
+        name:
+          type: string
+          title: Name
+          description: Document name
+        url:
+          type: string
+          title: Url
+          description: Document URL
+        summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Summary
+          description: Document summary (null until processing completes)
+        data_progress:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Data Progress
+          description: Processing progress (0.0 to 1.0)
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+          description: Document creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+          description: Last update timestamp
+      type: object
+      required:
+      - document_uuid
+      - status
+      - name
+      - url
+      - data_progress
+      - created_at
+      - updated_at
+      title: DocumentResponse
+      description: Response schema for document operations.
+    DocumentStatus:
+      type: string
+      enum:
+      - PENDING
+      - FETCHING
+      - PARSING
+      - SUMMARIZING
+      - SUCCESS
+      - FAILED
+      title: DocumentStatus
+      description: Document processing status enum.
+    ExtractionRequest:
+      properties:
+        url:
+          type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
+          title: Url
+          description: URL to extract content from
+        include_links:
+          type: boolean
+          title: Include Links
+          description: Include links in extraction
+          default: true
+        include_images:
+          type: boolean
+          title: Include Images
+          description: Include image information
+          default: false
+        language:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Language
+          description: Language for extraction
+          default: en
+      type: object
+      required:
+      - url
+      title: ExtractionRequest
+      description: Request schema for content extraction.
+    ExtractionResponse:
+      properties:
+        task_id:
+          type: string
+          title: Task Id
+          description: Unique task identifier
+        status:
+          type: string
+          title: Status
+          description: Task status
+        message:
+          type: string
+          title: Message
+          description: Response message
+      type: object
+      required:
+      - task_id
+      - status
+      - message
+      title: ExtractionResponse
+      description: Response schema for content extraction.
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    ProgressResponse:
+      properties:
+        task_id:
+          type: string
+          title: Task Id
+          description: Unique task identifier
+        status:
+          type: string
+          title: Status
+          description: Task status
+        progress:
+          type: number
+          maximum: 100.0
+          minimum: 0.0
+          title: Progress
+          description: Progress percentage
+        message:
+          type: string
+          title: Message
+          description: Progress message
+        result:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Result
+          description: Task result if completed
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+          description: Task creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+          description: Last update timestamp
+      type: object
+      required:
+      - task_id
+      - status
+      - progress
+      - message
+      - created_at
+      - updated_at
+      title: ProgressResponse
+      description: Response schema for task progress.
+    SummarizeRequest:
+      properties:
+        text:
+          type: string
+          maxLength: 100000
+          minLength: 1
+          title: Text
+          description: Text to summarize
+        model:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model
+          description: Ollama model to use
+          default: llama2
+        max_length:
+          anyOf:
+          - type: integer
+            maximum: 2000.0
+            minimum: 50.0
+          - type: 'null'
+          title: Max Length
+          description: Maximum summary length
+          default: 500
+        language:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Language
+          description: Language for summarization
+          default: en
+      type: object
+      required:
+      - text
+      title: SummarizeRequest
+      description: Request schema for text summarization.
+    SummarizeResponse:
+      properties:
+        task_id:
+          type: string
+          title: Task Id
+          description: Unique task identifier
+        status:
+          type: string
+          title: Status
+          description: Task status
+        message:
+          type: string
+          title: Message
+          description: Response message
+      type: object
+      required:
+      - task_id
+      - status
+      - message
+      title: SummarizeResponse
+      description: Response schema for text summarization.
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
