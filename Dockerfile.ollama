@@ -5,6 +5,7 @@ FROM ollama/ollama:latest
 ARG BUILD_DATE
 ARG VERSION
 ARG REVISION
+ARG DOCKER_NAMESPACE=summarizer
 
 # Create a directory for the model
 RUN mkdir -p /root/.ollama
@@ -29,12 +30,12 @@ done
 echo "Ollama is ready!"
 
 # Check if model exists, if not pull it
-if ! /bin/ollama list | grep -q "mistral:latest"; then
-    echo "Pulling mistral:latest model (this may take a few minutes)..."
-    /bin/ollama pull mistral:latest
+if ! /bin/ollama list | grep -q "gemma3:1b"; then
+    echo "Pulling gemma3:1b model (this may take a few minutes)..."
+    /bin/ollama pull gemma3:1b
     echo "Model pulled successfully!"
 else
-    echo "Model mistral:latest already exists"
+    echo "Model gemma3:1b already exists"
 fi
 
 # Keep Ollama running in foreground
@@ -58,7 +59,10 @@ LABEL org.opencontainers.image.created=${BUILD_DATE} \
       org.opencontainers.image.title="Summarizer Ollama" \
       org.opencontainers.image.description="Ollama LLM service with pre-loaded gemma3:1b model" \
       org.opencontainers.image.vendor="Summarizer API Project" \
-      org.opencontainers.image.source=""
+      org.opencontainers.image.source="https://github.com/user/summarizer-api" \
+      org.opencontainers.image.url="https://hub.docker.com/r/${DOCKER_NAMESPACE}/ollama" \
+      org.opencontainers.image.documentation="https://github.com/user/summarizer-api" \
+      org.opencontainers.image.licenses="MIT"
 
 # Start with our custom startup script
 CMD ["/bin/bash", "/usr/local/bin/startup.sh"]

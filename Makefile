@@ -1,7 +1,7 @@
 .PHONY: help install dev clean lint format test build up down logs restart
 .PHONY: migrate db-create db-drop pull-model openapi validate-schema
 .PHONY: up-monitoring down-monitoring test-docker health
-.PHONY: setup quick-start
+.PHONY: setup quick-start docker-hub-build docker-hub-push docker-hub-deploy
 
 # ============================================================================
 # HELP & BASIC COMMANDS
@@ -17,6 +17,12 @@ help:  ## Show this help
 	@echo "  make install  # Install dependencies"
 	@echo "  make up       # Start all services"
 	@echo "  make test     # Run tests"
+	@echo ""
+	@echo "🐳 Docker Hub Operations:"
+	@echo "  make docker-hub-build  # Build images for Docker Hub"
+	@echo "  make docker-hub-push   # Push images to Docker Hub"
+	@echo "  make docker-hub-deploy # Deploy using Docker Hub images"
+	@echo "  make docker-hub-full   # Complete workflow (build, push, deploy)"
 
 # ============================================================================
 # DEVELOPMENT SETUP
@@ -95,6 +101,44 @@ restart:  ## Restart all services
 	@echo "✅ Services restarted!"
 
 # ============================================================================
+# DOCKER HUB OPERATIONS
+# ============================================================================
+
+docker-hub-build:  ## Build images for Docker Hub
+	@echo "🏗️  Building Docker images for Docker Hub..."
+	@echo "📝 Note: Set DOCKER_NAMESPACE and VERSION environment variables if needed"
+	@echo "   Example: DOCKER_NAMESPACE=myusername VERSION=1.0.0 make docker-hub-build"
+	./scripts/docker-hub.sh build -n $${DOCKER_NAMESPACE:-summarizer} -v $${VERSION:-0.1.0}
+
+docker-hub-push:  ## Push images to Docker Hub
+	@echo "📤 Pushing Docker images to Docker Hub..."
+	@echo "📝 Note: Set DOCKER_NAMESPACE and VERSION environment variables if needed"
+	@echo "   Example: DOCKER_NAMESPACE=myusername VERSION=1.0.0 make docker-hub-push"
+	./scripts/docker-hub.sh push -n $${DOCKER_NAMESPACE:-summarizer} -v $${VERSION:-0.1.0}
+
+docker-hub-deploy:  ## Deploy using Docker Hub images
+	@echo "🚀 Deploying using Docker Hub images..."
+	@echo "📝 Note: Set DOCKER_NAMESPACE and VERSION environment variables if needed"
+	@echo "   Example: DOCKER_NAMESPACE=myusername VERSION=1.0.0 make docker-hub-deploy"
+	@if [ -z "$$DOCKER_NAMESPACE" ]; then \
+		echo "❌ Error: DOCKER_NAMESPACE environment variable is required"; \
+		echo "   Example: DOCKER_NAMESPACE=myusername make docker-hub-deploy"; \
+		exit 1; \
+	fi
+	./scripts/docker-hub.sh deploy -n $${DOCKER_NAMESPACE} -v $${VERSION:-0.1.0}
+
+docker-hub-full:  ## Complete Docker Hub workflow (build, push, deploy)
+	@echo "🚀 Running complete Docker Hub workflow..."
+	@echo "📝 Note: Set DOCKER_NAMESPACE and VERSION environment variables if needed"
+	@echo "   Example: DOCKER_NAMESPACE=myusername VERSION=1.0.0 make docker-hub-full"
+	@if [ -z "$$DOCKER_NAMESPACE" ]; then \
+		echo "❌ Error: DOCKER_NAMESPACE environment variable is required"; \
+		echo "   Example: DOCKER_NAMESPACE=myusername make docker-hub-full"; \
+		exit 1; \
+	fi
+	./scripts/docker-hub.sh full -n $${DOCKER_NAMESPACE} -v $${VERSION:-0.1.0}
+
+# ============================================================================
 # DATABASE OPERATIONS
 # ============================================================================
 
@@ -153,9 +197,9 @@ down-monitoring:  ## Stop services including monitoring
 	docker-compose --profile monitoring down
 	@echo "✅ All services stopped!"
 
-
-
-
+# ============================================================================
+# TESTING & VALIDATION
+# ============================================================================
 
 export-openapi:  ## Export OpenAPI spec from Docker
 	docker-compose exec api python -c "import json; from app.main import app; print(json.dumps(app.openapi(), indent=2))" > openapi.json

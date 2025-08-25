@@ -327,6 +327,7 @@ QUEUE_CONFIG = {
 
 ### One-Command Setup
 
+#### Local Development (Build from Source)
 ```bash
 # Clone and start the complete stack
 git clone <repository-url> summarizer-api
@@ -334,6 +335,25 @@ cd summarizer-api
 
 # Start all services (API, Worker, Database, Redis, Ollama)
 make up
+
+# Initialize database schema
+make db-migrate-docker
+
+# Verify system health
+make health
+```
+
+#### Production Deployment (Docker Hub Images)
+```bash
+# Clone repository
+git clone <repository-url> summarizer-api
+cd summarizer-api
+
+# Set your Docker Hub namespace
+export DOCKER_NAMESPACE=yourusername
+
+# Deploy using pre-built images
+make docker-hub-deploy
 
 # Initialize database schema
 make db-migrate-docker
@@ -455,9 +475,86 @@ PRIVATE_IP_RANGES = [
 |-----------|------------------|------|-------------|
 | **API** | `summarizer/api:latest` | ~200MB | FastAPI application with dependencies |
 | **Worker** | `summarizer/worker:latest` | ~200MB | Background job processor |
-| **Ollama** | `summarizer/ollama:gemma3-1b` | ~2.5GB | Pre-loaded with gemma3:1b model |
+| **Ollama** | `summarizer/ollama:latest` | ~2.5GB | Pre-loaded with gemma3:1b model |
 
-> **Note**: Replace with actual Docker Hub URLs when images are published.
+### Using Docker Hub Images
+
+#### Quick Deployment
+```bash
+# Set your Docker Hub namespace
+export DOCKER_NAMESPACE=yourusername
+
+# Deploy using pre-built images
+make docker-hub-deploy
+
+# Or specify a specific version
+VERSION=0.1.0 make docker-hub-deploy
+```
+
+#### Manual Docker Commands
+```bash
+# Pull images directly
+docker pull yourusername/api:latest
+docker pull yourusername/worker:latest
+docker pull yourusername/ollama:latest
+
+# Run with docker-compose.prod.yml
+DOCKER_NAMESPACE=yourusername docker-compose -f docker-compose.prod.yml up -d
+```
+
+### Publishing Your Own Images
+
+#### 1. Build and Push to Docker Hub
+```bash
+# Set your Docker Hub namespace
+export DOCKER_NAMESPACE=yourusername
+
+# Build images for Docker Hub
+make docker-hub-build
+
+# Push to Docker Hub
+make docker-hub-push
+
+# Or do both in one command
+./scripts/docker-hub.sh full -n yourusername
+```
+
+#### 2. Custom Versioning
+```bash
+# Build with specific version
+VERSION=1.0.0 DOCKER_NAMESPACE=yourusername make docker-hub-build
+
+# Push specific version
+VERSION=1.0.0 DOCKER_NAMESPACE=yourusername make docker-hub-push
+```
+
+#### 3. Available Tags
+Each image is tagged with:
+- `latest` - Most recent version
+- `{VERSION}` - Semantic version (e.g., `0.1.0`)
+- `{VERSION}-{REVISION}` - Version with git commit (e.g., `0.1.0-a1b2c3d`)
+
+> **Note**: Replace `yourusername` with your actual Docker Hub username. The default namespace is `summarizer`.
+
+📖 **For complete Docker setup and Docker Hub deployment instructions, see [DOCKER.md](DOCKER.md)**
+
+### 🚀 Quick Docker Hub Setup
+
+For the fastest setup experience, use our unified script:
+
+```bash
+# Complete workflow: build, push, and deploy
+./scripts/docker-hub.sh full -n yourusername
+
+# Build and push only (skip deployment)
+./scripts/docker-hub.sh build -n yourusername && ./scripts/docker-hub.sh push -n yourusername
+
+# Deploy existing images from Docker Hub
+./scripts/docker-hub.sh deploy -n yourusername
+
+# Or use Makefile commands
+make docker-hub-full DOCKER_NAMESPACE=yourusername
+```
 
 ---
 

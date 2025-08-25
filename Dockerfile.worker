@@ -5,6 +5,7 @@ FROM python:3.12-slim
 ARG BUILD_DATE
 ARG VERSION
 ARG REVISION
+ARG DOCKER_NAMESPACE=summarizer
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -52,7 +53,10 @@ LABEL org.opencontainers.image.created=${BUILD_DATE} \
       org.opencontainers.image.title="Summarizer Worker" \
       org.opencontainers.image.description="Background worker for document processing" \
       org.opencontainers.image.vendor="Summarizer API Project" \
-      org.opencontainers.image.source=""
+      org.opencontainers.image.source="https://github.com/user/summarizer-api" \
+      org.opencontainers.image.url="https://hub.docker.com/r/${DOCKER_NAMESPACE}/worker" \
+      org.opencontainers.image.documentation="https://github.com/user/summarizer-api" \
+      org.opencontainers.image.licenses="MIT"
 
 # Command to run the RQ worker
 CMD ["python", "-c", "\

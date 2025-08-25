@@ -1,4 +1,5 @@
 # Docker Compose configuration for Summarizer API
+# Supports both local builds and Docker Hub images
 
 services:
   # PostgreSQL Database
@@ -46,7 +47,15 @@ services:
 
   # Ollama LLM Service
   ollama:
-    image: ollama/ollama:latest
+    image: ${OLLAMA_IMAGE:-ollama/ollama:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile.ollama
+      args:
+        BUILD_DATE: ${BUILD_DATE:-}
+        VERSION: ${VERSION:-0.1.0}
+        REVISION: ${REVISION:-}
+        DOCKER_NAMESPACE: ${DOCKER_NAMESPACE:-summarizer}
     container_name: summarizer-ollama
     ports:
       - "11434:11434"
@@ -70,9 +79,15 @@ services:
 
   # API Service
   api:
+    image: ${API_IMAGE:-}
     build:
       context: .
       dockerfile: Dockerfile.api
+      args:
+        BUILD_DATE: ${BUILD_DATE:-}
+        VERSION: ${VERSION:-0.1.0}
+        REVISION: ${REVISION:-}
+        DOCKER_NAMESPACE: ${DOCKER_NAMESPACE:-summarizer}
     container_name: summarizer-api
     environment:
       DATABASE_URL: postgresql://user:password@db:5432/summarizer
@@ -108,9 +123,15 @@ services:
 
   # Background Worker
   worker:
+    image: ${WORKER_IMAGE:-}
     build:
       context: .
       dockerfile: Dockerfile.worker
+      args:
+        BUILD_DATE: ${BUILD_DATE:-}
+        VERSION: ${VERSION:-0.1.0}
+        REVISION: ${REVISION:-}
+        DOCKER_NAMESPACE: ${DOCKER_NAMESPACE:-summarizer}
     container_name: summarizer-worker
     environment:
       DATABASE_URL: postgresql://user:password@db:5432/summarizer
